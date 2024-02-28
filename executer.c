@@ -26,6 +26,11 @@ int executer(char **arguments)
     char *path_copy = strdup(path);
     char *dir = strtok(path_copy, ":");
 
+    if (arguments[0] == NULL)
+    {
+        return (-1);
+    }
+
     for (i = 0; i < count_builtins(); i++)
     {
         if (strcmp(arguments[0], builtin_fxns_list[i]) == 0)
@@ -38,6 +43,7 @@ int executer(char **arguments)
     {
         char *cmd_path = malloc(strlen(dir) + strlen(arguments[0]) + 2);
         sprintf(cmd_path, "%s/%s", dir, arguments[0]);
+
         if (access(cmd_path, X_OK) == 0)
         {
             pid_t pid = fork();
