@@ -8,25 +8,19 @@
  * Return: 1 on success,  0 on failure
  */
 
-#include "shell.h"
-
 char *builtin_fxns_list[] = {
     "env",
     "cd",
     "exit"};
-
 int (*built_in_fxn[])(char **) = {
     &my_env,
     &my_cd,
-    &my_exit};
+    &my_exit
 
+};
 int executer(char **arguments)
 {
     int i = 0;
-    int status;
-    char *path = getenv("PATH");
-    char *path_copy = strdup(path);
-    char *dir = strtok(path_copy, ":");
 
     if (arguments[0] == NULL)
     {
@@ -41,36 +35,7 @@ int executer(char **arguments)
         }
     }
 
-    while (dir != NULL)
-    {
-        char *cmd_path = malloc(strlen(dir) + strlen(arguments[0]) + 2);
-        sprintf(cmd_path, "%s/%s", dir, arguments[0]);
-
-        if (access(cmd_path, X_OK) == 0)
-        {
-            pid_t pid = fork();
-            if (pid == 0)
-            {
-                execvp(cmd_path, arguments);
-                perror("Error in child process: execvp");
-                exit(EXIT_FAILURE);
-            }
-            else if (pid > 0)
-            {
-                waitpid(pid, &status, 0);
-                return WEXITSTATUS(status);
-            }
-            else
-            {
-                perror("Error in forking");
-                return -1;
-            }
-        }
-        free(cmd_path);
-        dir = strtok(NULL, ":");
-    }
-
-    return non_builtin(arguments);
+    return (non_builtin(arguments));
 }
 
 int count_builtins(void)
