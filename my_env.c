@@ -12,7 +12,7 @@ int my_env(char **args_list)
     int i = 0;
     (void)(**args_list);
 
-    while (environ[i])
+    while (environ[i] != NULL)
     {
         puts(environ[i]);
         i++;
