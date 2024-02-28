@@ -22,45 +22,55 @@ int (*built_in_fxn[])(char **) = {
 
 int executer(char **arguments)
 {
-    int i = 0;
-    int status;
+    int status = 0;
     char *path = getenv("PATH");
-    char *path_copy = strdup(path);
-    char *dir = strtok(path_copy, ":");
-
-    for (i = 0; i < count_builtins(); i++)
+    char *dir;
+    char *path_copy;
+    if (path == NULL)
     {
-        if (strcmp(arguments[0], builtin_fxns_list[i]) == 0)
-        {
-            return ((*built_in_fxn[i])(arguments));
-        }
+        fprintf(stderr, "Error: PATH environment variable not found\n");
+        return -1;
     }
 
+    path_copy = strdup(path);
+    if (path_copy == NULL)
+    {
+        perror("Error: Failed to copy PATH");
+        return -1;
+    }
+
+    dir = strtok(path_copy, ":");
     while (dir != NULL)
     {
         char *cmd_path = malloc(strlen(dir) + strlen(arguments[0]) + 2);
+        if (cmd_path == NULL)
+        {
+            perror("Error: Failed to allocate memory for cmd_path");
+            free(path_copy);
+            return -1;
+        }
         sprintf(cmd_path, "%s/%s", dir, arguments[0]);
         if (access(cmd_path, X_OK) == 0)
         {
-
             pid_t pid = fork();
             if (pid == 0)
             {
                 execvp(cmd_path, arguments);
-
                 perror("Error in child process: execvp");
                 exit(EXIT_FAILURE);
             }
             else if (pid > 0)
             {
-
                 waitpid(pid, &status, 0);
+                free(cmd_path);
+                free(path_copy);
                 return WEXITSTATUS(status);
             }
             else
             {
-
                 perror("Error in forking");
+                free(cmd_path);
+                free(path_copy);
                 return -1;
             }
         }
@@ -68,11 +78,7 @@ int executer(char **arguments)
         dir = strtok(NULL, ":");
     }
 
+    free(path_copy);
     fprintf(stderr, "Error: Command not found: %s\n", arguments[0]);
     return -1;
-}
-
-int count_builtins(void)
-{
-    return sizeof(builtin_fxns_list) / sizeof(char *);
 }
