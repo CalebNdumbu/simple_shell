@@ -19,13 +19,13 @@ int my_exit(char **args)
         if (*endpointer != '\0')
         {
             fprintf(stderr, "Error: invalid exit status: %s\n", args[1]);
-            return 1;
+            exit(1);
         }
 
-        return exit_state;
+        exit(exit_state);
     }
     else
     {
-        return 0;
+        exit(0);
     }
 }

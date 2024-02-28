@@ -20,7 +20,9 @@ int my_exit(char **args);
 int non_builtin(char **arguments);
 char **split_input(char *input);
 char *stream_reader(void);
+
 int count_builtins(void);
+
 void non_interactive(void);
 
 #endif

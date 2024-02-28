@@ -8,6 +8,8 @@
  * Return: 1 on success,  0 on failure
  */
 
+#include "shell.h"
+
 char *builtin_fxns_list[] = {
     "env",
     "cd",
@@ -35,7 +37,7 @@ int executer(char **arguments)
     {
         if (strcmp(arguments[0], builtin_fxns_list[i]) == 0)
         {
-            return ((*built_in_fxn[i])(arguments));
+            return (*built_in_fxn[i])(arguments);
         }
     }
 
@@ -68,8 +70,7 @@ int executer(char **arguments)
         dir = strtok(NULL, ":");
     }
 
-    fprintf(stderr, "Error: Command not found: %s\n", arguments[0]);
-    return -1;
+    return non_builtin(arguments);
 }
 
 int count_builtins(void)
