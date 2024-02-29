@@ -23,6 +23,8 @@ char **split_input(char *input);
 char *stream_reader(void);
 char *get_location(char *cmd);
 
+int count_builtins(void);
+
 void non_interactive(void);
 
 #endif
