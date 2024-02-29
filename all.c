@@ -5,10 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
+#include <sys/wait.h>
 
 #define DELIM " \n\t\r\a"
 
@@ -16,6 +15,9 @@ char *line_reader(void);
 char **split_line(char *line);
 void execmd(char **argv);
 char *get_location(char *cmd);
+void print_environment(void);
+
+extern char **environ;
 
 #endif
 
@@ -33,10 +35,8 @@ char *get_location(char *cmd)
 
     if (path)
     {
-
         path_cpy = strdup(path);
         cmd_length = strlen(cmd);
-
         path_token = strtok(path_cpy, ":");
 
         while (path_token != NULL)
@@ -47,12 +47,11 @@ char *get_location(char *cmd)
             strcpy(file_path, path_token);
             strcat(file_path, "/");
             strcat(file_path, cmd);
-            strcat(file_path, "\0");
 
             if (stat(file_path, &buffer) == 0)
             {
                 free(path_cpy);
-                return (file_path);
+                return file_path;
             }
             else
             {
@@ -65,17 +64,14 @@ char *get_location(char *cmd)
 
         if (stat(cmd, &buffer) == 0)
         {
-            return (cmd);
+            return strdup(cmd);
         }
 
-        return (NULL);
+        return NULL;
     }
 
-    return (NULL);
+    return NULL;
 }
-
-#include <sys/types.h>
-#include <sys/wait.h>
 
 void execmd(char **argv)
 {
@@ -100,7 +96,7 @@ void execmd(char **argv)
 
                 if (execve(actual_cmd, const_argv, NULL) == -1)
                 {
-                    perror("Error:");
+                    perror("execve");
                     exit(EXIT_FAILURE);
                 }
             }
@@ -114,7 +110,8 @@ void execmd(char **argv)
     }
     else if (pid < 0)
     {
-        perror("Error in forking");
+        perror("fork");
+        exit(EXIT_FAILURE);
     }
     else
     {
@@ -125,29 +122,20 @@ void execmd(char **argv)
     }
 }
 
-/**
- * split_input - tokenizes a string
- *
- * @line: string to be tokenized.
- *
- * Return: ptr to tokenized array.
- */
-
 char **split_line(char *line)
 {
-    int position;
+    int position = 0;
     int buffersize = 64;
     char *token;
     char **tokens;
     char **new_tokens;
 
-    position = 0;
     tokens = malloc(sizeof(char *) * buffersize);
 
     if (!tokens)
     {
-        fprintf(stderr, "error in allocating memory for tokens\n");
-        return (NULL);
+        perror("malloc");
+        exit(EXIT_FAILURE);
     }
 
     token = strtok(line, DELIM);
@@ -164,9 +152,9 @@ char **split_line(char *line)
 
             if (!new_tokens)
             {
-                fprintf(stderr, "error in reallocating memory\n");
+                perror("realloc");
                 free(tokens);
-                return NULL;
+                exit(EXIT_FAILURE);
             }
             tokens = new_tokens;
         }
@@ -178,40 +166,61 @@ char **split_line(char *line)
 
 char *line_reader(void)
 {
+    char *line = NULL;
+    size_t bufsize = 0;
+    ssize_t read;
 
-    char *linepointer = NULL;
-    size_t buf_size = 0;
-
-    if (getline(&linepointer, &buf_size, stdin) == -1)
+    read = getline(&line, &bufsize, stdin);
+    if (read == -1)
     {
-        if (feof(stdin))
-        {
-        }
-
-        else
-        {
-            perror("Error reading from stdin");
-            exit(EXIT_FAILURE);
-        }
+        perror("getline");
+        exit(EXIT_FAILURE);
     }
-    return (linepointer);
+
+    return line;
 }
 
-int main(int ac, char **argv)
+void print_environment(void)
+{
+    char **env_var = environ;
+
+    while (*env_var != NULL)
+    {
+        printf("%s\n", *env_var);
+        env_var++;
+    }
+}
+
+int main(void)
 {
     char *line;
     char **args;
-    (void)ac;
-    (void)argv;
 
     do
     {
-        printf("shell by caleb $ ");
+        printf("$ ");
         line = line_reader();
         args = split_line(line);
-        execmd(args);
+
+        if (args != NULL && args[0] != NULL)
+        {
+            if (strcmp(args[0], "env") == 0)
+            {
+                print_environment();
+            }
+            else if (strcmp(args[0], "exit") == 0)
+            {
+                break;
+            }
+            else
+            {
+                execmd(args);
+            }
+        }
 
         free(line);
         free(args);
     } while (1);
+
+    return 0;
 }
