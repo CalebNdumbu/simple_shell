@@ -15,25 +15,10 @@ char *line_reader(void);
 char **split_line(char *line);
 void execmd(char **argv);
 char *get_location(char *cmd);
-void print_environment(void);
 
 extern char **environ;
 
 #endif
-
-/**
- * print_environment - print the current environment variables
- */
-void print_environment(void)
-{
-    char **env_var = environ;
-
-    while (*env_var != NULL)
-    {
-        printf("%s\n", *env_var);
-        env_var++;
-    }
-}
 
 /**
  * get_location - get the location of a command
@@ -103,21 +88,15 @@ void execmd(char **argv)
     pid_t pid;
     int status;
 
-    if (argv)
+    pid = fork();
+
+    if (pid == 0)
     {
-        if (strcmp(argv[0], "env") == 0)
+        char *cmd;
+        char *actual_cmd;
+
+        if (argv)
         {
-            print_environment();
-            return;
-        }
-
-        pid = fork();
-
-        if (pid == 0)
-        {
-            char *cmd;
-            char *actual_cmd;
-
             cmd = argv[0];
             actual_cmd = get_location(cmd);
 
@@ -136,19 +115,19 @@ void execmd(char **argv)
                 printf("Command not found: %s\n", cmd);
                 exit(EXIT_FAILURE);
             }
-            exit(EXIT_SUCCESS);
         }
-        else if (pid < 0)
+        exit(EXIT_SUCCESS);
+    }
+    else if (pid < 0)
+    {
+        perror("Error in forking");
+    }
+    else
+    {
+        do
         {
-            perror("Error in forking");
-        }
-        else
-        {
-            do
-            {
-                waitpid(pid, &status, WUNTRACED);
-            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-        }
+            waitpid(pid, &status, WUNTRACED);
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
     }
 }
 
@@ -206,47 +185,23 @@ char **split_line(char *line)
  *
  * Return: pointer to the line read
  */
-
-#define LSH_RL_BUFSIZE 1024
 char *line_reader(void)
 {
-    int bufsize = LSH_RL_BUFSIZE;
-    int position = 0;
-    char *buffer = malloc(sizeof(char) * bufsize);
-    int c;
+    char *linepointer = NULL;
+    size_t buf_size = 0;
 
-    if (!buffer)
+    if (getline(&linepointer, &buf_size, stdin) == -1)
     {
-        fprintf(stderr, "lsh: allocation error\n");
-        exit(EXIT_FAILURE);
-    }
-
-    while (1)
-    {
-        c = getchar();
-
-        if (c == EOF || c == '\n')
+        if (feof(stdin))
         {
-            buffer[position] = '\0';
-            return buffer;
         }
         else
         {
-            buffer[position] = c;
-        }
-        position++;
-
-        if (position >= bufsize)
-        {
-            bufsize += LSH_RL_BUFSIZE;
-            buffer = realloc(buffer, bufsize);
-            if (!buffer)
-            {
-                fprintf(stderr, "lsh: allocation error\n");
-                exit(EXIT_FAILURE);
-            }
+            perror("Error reading from stdin");
+            exit(EXIT_FAILURE);
         }
     }
+    return (linepointer);
 }
 
 /**
@@ -256,28 +211,19 @@ char *line_reader(void)
  *
  * Return: always 0
  */
-int main(void)
+int main(int ac, char **argv)
 {
     char *line;
     char **args;
+    (void)ac;
+    (void)argv;
 
     do
     {
-        printf("$ ");
+        printf("shell by caleb $ ");
         line = line_reader();
         args = split_line(line);
-
-        if (args != NULL && args[0] != NULL)
-        {
-            if (strcmp(args[0], "env") == 0)
-            {
-                print_environment();
-            }
-            else
-            {
-                execmd(args);
-            }
-        }
+        execmd(args);
 
         free(line);
         free(args);
