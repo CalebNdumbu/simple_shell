@@ -206,23 +206,47 @@ char **split_line(char *line)
  *
  * Return: pointer to the line read
  */
+
+#define LSH_RL_BUFSIZE 1024
 char *line_reader(void)
 {
-    char *linepointer = NULL;
-    size_t buf_size = 0;
+    int bufsize = LSH_RL_BUFSIZE;
+    int position = 0;
+    char *buffer = malloc(sizeof(char) * bufsize);
+    int c;
 
-    if (getline(&linepointer, &buf_size, stdin) == -1)
+    if (!buffer)
     {
-        if (feof(stdin))
+        fprintf(stderr, "lsh: allocation error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    while (1)
+    {
+        c = getchar();
+
+        if (c == EOF || c == '\n')
         {
+            buffer[position] = '\0';
+            return buffer;
         }
         else
         {
-            perror("Error reading from stdin");
-            exit(EXIT_FAILURE);
+            buffer[position] = c;
+        }
+        position++;
+
+        if (position >= bufsize)
+        {
+            bufsize += LSH_RL_BUFSIZE;
+            buffer = realloc(buffer, bufsize);
+            if (!buffer)
+            {
+                fprintf(stderr, "lsh: allocation error\n");
+                exit(EXIT_FAILURE);
+            }
         }
     }
-    return (linepointer);
 }
 
 /**
