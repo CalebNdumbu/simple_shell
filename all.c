@@ -8,17 +8,32 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+char *get_line(void);
 
 #define DELIM " \n\t\r\a"
 
-char *line_reader(void);
 char **split_line(char *line);
 void execmd(char **argv);
 char *get_location(char *cmd);
+void print_environment(void);
 
 extern char **environ;
 
 #endif
+
+/**
+ * print_environment - print the current environment variables
+ */
+void print_environment(void)
+{
+    char **env_var = environ;
+
+    while (*env_var != NULL)
+    {
+        printf("%s\n", *env_var);
+        env_var++;
+    }
+}
 
 /**
  * get_location - get the location of a command
@@ -185,23 +200,48 @@ char **split_line(char *line)
  *
  * Return: pointer to the line read
  */
-char *line_reader(void)
-{
-    char *linepointer = NULL;
-    size_t buf_size = 0;
+#define INITIAL_BUFFER_SIZE 128
 
-    if (getline(&linepointer, &buf_size, stdin) == -1)
+char *get_line(void)
+{
+    size_t buffer_size = INITIAL_BUFFER_SIZE;
+    size_t position = 0;
+    int c;
+    char *new_buffer;
+    char *buffer = malloc(INITIAL_BUFFER_SIZE * sizeof(char));
+    if (!buffer)
     {
-        if (feof(stdin))
+        perror("Memory allocation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    while ((c = getchar()) != '\n' && c != EOF)
+    {
+        buffer[position++] = c;
+
+        if (position >= buffer_size)
         {
-        }
-        else
-        {
-            perror("Error reading from stdin");
-            exit(EXIT_FAILURE);
+            buffer_size += INITIAL_BUFFER_SIZE;
+            new_buffer = realloc(buffer, buffer_size * sizeof(char));
+            if (!new_buffer)
+            {
+                perror("Memory reallocation failed");
+                free(buffer);
+                exit(EXIT_FAILURE);
+            }
+            buffer = new_buffer;
         }
     }
-    return (linepointer);
+
+    buffer[position] = '\0';
+
+    if (position == 0 && c == EOF)
+    {
+        free(buffer);
+        return NULL;
+    }
+
+    return buffer;
 }
 
 /**
@@ -211,23 +251,36 @@ char *line_reader(void)
  *
  * Return: always 0
  */
-int main(int ac, char **argv)
+int main(void)
 {
     char *line;
     char **args;
-    (void)ac;
-    (void)argv;
 
     do
     {
-        printf("shell by caleb $ ");
-        line = line_reader();
+        printf("$ ");
+        line = get_line();
         args = split_line(line);
-        execmd(args);
+
+        if (args != NULL && args[0] != NULL)
+        {
+            if (strcmp(args[0], "env") == 0)
+            {
+                print_environment();
+            }
+            else if (strcmp(args[0], "exit") == 0)
+            {
+                break;
+            }
+            else
+            {
+                execmd(args);
+            }
+        }
 
         free(line);
         free(args);
     } while (1);
 
-    return (0);
+    return 0;
 }
