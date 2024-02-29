@@ -24,7 +24,7 @@ char **split_input(char *input)
     if (!tokens)
     {
         fprintf(stderr, "error in allocating memory for tokens\n");
-        return NULL;
+        return (NULL);
     }
 
     token = strtok(input, DELIM);

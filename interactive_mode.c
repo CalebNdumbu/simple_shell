@@ -10,7 +10,7 @@ void interactive_mode(void)
     char **arguments;
     int state;
 
-    do
+    while (1)
     {
         printf("shell by caleb $ ");
         input = input_reader();
@@ -42,6 +42,5 @@ void interactive_mode(void)
         {
             fprintf(stderr, "Error: Non-zero exit status\n");
         }
-
-    } while (1);
+    }
 }
