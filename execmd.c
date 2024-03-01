@@ -1,48 +1,47 @@
+
 #include "shell.h"
-void execmd(char **argv)
+
+/**
+ * executer - determine if a command is builtin or not
+ *
+ * @args: command
+ *
+ * Return: 1 on success,  0 on failure
+ */
+
+char *builtin_fxns_list[] = {
+    "env",
+    "cd",
+    "exit"};
+int (*built_in_fxn[])(char **) = {
+    &my_env,
+    &my_cd,
+    &my_exit
+
+};
+#include "shell.h"
+
+int execmd(char **arguments)
 {
-    pid_t pid;
-    int status;
+    int i = 0;
 
-    pid = fork();
-
-    if (pid == 0)
+    if (arguments[0] == NULL)
     {
-        char *cmd;
-        char *actual_cmd;
+        return -1;
+    }
 
-        if (argv)
+    for (i = 0; i < count_builtins(); i++)
+    {
+        if (strcmp(arguments[0], builtin_fxns_list[i]) == 0)
         {
-            cmd = argv[0];
-            actual_cmd = get_location(cmd);
-
-            if (actual_cmd != NULL)
-            {
-                char *const *const_argv = (char *const *)argv;
-
-                if (execve(actual_cmd, const_argv, NULL) == -1)
-                {
-                    perror("Error:");
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else
-            {
-                printf("Command not found: %s\n", cmd);
-                exit(EXIT_FAILURE);
-            }
+            return (*built_in_fxn[i])(arguments);
         }
-        exit(EXIT_SUCCESS);
     }
-    else if (pid < 0)
-    {
-        perror("Error in forking");
-    }
-    else
-    {
-        do
-        {
-            waitpid(pid, &status, WUNTRACED);
-        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-    }
+
+    return non_builtin(arguments);
+}
+
+int count_builtins(void)
+{
+    return sizeof(builtin_fxns_list) / sizeof(char *);
 }
