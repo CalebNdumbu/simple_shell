@@ -1,4 +1,13 @@
 #include "shell.h"
+
+/**
+ * split_line - Split a line into tokens.
+ * @line: The line to split.
+ *
+ * Splits the given line into tokens based on whitespace characters.
+ *
+ * Return: An array of tokens.
+ */
 char **split_line(char *line)
 {
     int position;
@@ -38,6 +47,7 @@ char **split_line(char *line)
         }
         token = strtok(NULL, DELIM);
     }
+
     tokens[position] = NULL;
     return tokens;
 }
