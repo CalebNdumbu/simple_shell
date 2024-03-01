@@ -1,12 +1,4 @@
 #include "shell.h"
-/**
- * split_input - tokenizes a string
- *
- * @line: string to be tokenized.
- *
- * Return: ptr to tokenized array.
- */
-
 char **split_line(char *line)
 {
     int position;

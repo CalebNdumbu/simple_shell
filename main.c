@@ -1,20 +1,19 @@
 #include "shell.h"
-
-/**
- * main - determine if our shell is in active mode
- *
- * Return: 0 if success
- */
 int main(int ac, char **argv)
 {
-    if (isatty(STDIN_FILENO) == 1)
-    {
-        interactive_mode(ac, argv);
-    }
-    else
-    {
-        non_interactive(ac, argv);
-    }
+    char *line;
+    char **args;
+    (void)ac;
+    (void)argv;
 
-    return 0;
+    do
+    {
+        printf("shell by caleb $ ");
+        line = line_reader();
+        args = split_line(line);
+        execmd(args);
+
+        free(line);
+        free(args);
+    } while (1);
 }
